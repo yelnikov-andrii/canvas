@@ -1,2 +1,2 @@
 
-[DEMO] (https://yelnikov-andrii.github.io/canvas/)
+[DEMO](https://yelnikov-andrii.github.io/canvas/)
