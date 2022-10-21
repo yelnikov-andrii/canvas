@@ -18,6 +18,39 @@ export const Canvas: React.FC <Props> = ({clearCanvas, start}) => {
   const [paths, setPaths] = useState<Coords[]>([]);
   const [points, setPoints] = useState<Point[]>([]);
 
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+  });
+
+  const createLine = (
+    x1: number,
+    y1: number, 
+    x2: number, 
+    y2: number,
+    color: string
+  ) => {
+    if (canvasCtxRef.current) {
+      canvasCtxRef.current.beginPath();
+      canvasCtxRef.current.strokeStyle = color;
+      canvasCtxRef.current.moveTo(x1, y1);
+      canvasCtxRef.current.lineTo(x2, y2);
+      canvasCtxRef.current.stroke();
+      canvasCtxRef.current.closePath();
+    }
+  }
+
+  const createPoint = (x: number, y: number, color: string) => {
+    if (canvasCtxRef.current) {
+      canvasCtxRef.current.beginPath();
+      canvasCtxRef.current.fillStyle = color;
+      canvasCtxRef.current.moveTo(x, y);
+      canvasCtxRef.current.lineTo(x, 5);
+      canvasCtxRef.current.moveTo(x, y);
+      canvasCtxRef.current.arc(x, y, 5, 0, 180, false)
+      canvasCtxRef.current.fill();
+    }
+  }
+
   useEffect(() => {
     if (canvasRef.current) {
       resize();
@@ -25,19 +58,13 @@ export const Canvas: React.FC <Props> = ({clearCanvas, start}) => {
 
       if (canvasCtxRef.current) {
         canvasCtxRef.current.lineCap = 'round';
-        canvasCtxRef.current.strokeStyle = 'black';
         canvasCtxRef.current.lineWidth = 1;
       }
     }
 
-    for (let i = 0; i < paths.length; i++) {
-      canvasCtxRef.current?.beginPath();
-      canvasCtxRef.current?.moveTo(paths[i]['x1'], paths[i]['y1']);
-      canvasCtxRef.current?.lineTo(paths[i]['x2'], paths[i]['y2']);
-      canvasCtxRef.current?.stroke();
-      canvasCtxRef.current?.closePath();
-    }
-  }, [paths]);
+    paths.forEach(path => createLine(path['x1'], path['y1'], path['x2'], path['y2'], 'black'));
+
+  }, [paths, isDrawing]);
 
   useEffect(() => {
     if (clearCanvas) {
@@ -48,20 +75,8 @@ export const Canvas: React.FC <Props> = ({clearCanvas, start}) => {
   }, [clearCanvas]);
 
   useEffect(() => {
-    
-    for (let i = 0; i < points.length; i++) {
-      if (canvasCtxRef.current) {
-      canvasCtxRef.current.beginPath();
-      canvasCtxRef.current.fillStyle = 'red';
-      canvasCtxRef.current.moveTo(points[i]['x'], points[i]['y']);
-      canvasCtxRef.current.lineTo(points[i]['x'], 5);
-      canvasCtxRef.current.moveTo(points[i]['x'], points[i]['y']);
-      canvasCtxRef.current.arc(points[i]['x'], points[i]['y'], 5, 0, 180, false)
-      canvasCtxRef.current.fill();
-
-    }
-    }
-  }, [points])
+    points.forEach(point => createPoint(point['x'], point['y'], 'red'));
+  }, [points, isDrawing]);
 
   const resize = () => {
     if (canvasRef.current) {
@@ -92,22 +107,8 @@ export const Canvas: React.FC <Props> = ({clearCanvas, start}) => {
       if (offset2.x !== offsetX2 || offset2.y !== offsetY2) {
         canvasCtxRef.current.clearRect(0, 0, 500, 500);
 
-        for (let i = 0; i < paths.length; i++) {
-          canvasCtxRef.current?.beginPath();
-          canvasCtxRef.current?.moveTo(paths[i]['x1'], paths[i]['y1']);
-          canvasCtxRef.current?.lineTo(paths[i]['x2'], paths[i]['y2']);
-          canvasCtxRef.current?.stroke();
-          canvasCtxRef.current?.closePath();
-        }
-
-        for (let i = 0; i < points.length; i++) {
-          canvasCtxRef.current?.beginPath();
-          canvasCtxRef.current?.moveTo(points[i]['x'], points[i]['y']);
-          canvasCtxRef.current?.lineTo(points[i]['x'], 5);
-          canvasCtxRef.current?.moveTo(points[i]['x'], points[i]['y']);
-          canvasCtxRef.current?.arc(points[i]['x'], points[i]['y'], 5, 0, 180, false)
-          canvasCtxRef.current?.fill();
-        }
+        paths.forEach(path => createLine(path['x1'], path['y1'], path['x2'], path['y2'], 'black'));
+        points.forEach(point => createPoint(point['x'], point['y'], 'red'));
       }
 
       setOffset2({x: offsetX2, y: offsetY2});
@@ -131,15 +132,7 @@ export const Canvas: React.FC <Props> = ({clearCanvas, start}) => {
         );
 
         if (point) {
-          if (canvasCtxRef.current) {
-            canvasCtxRef.current?.beginPath();
-            canvasCtxRef.current.fillStyle = 'red';
-            canvasCtxRef.current?.moveTo(point.x, point.y);
-            canvasCtxRef.current?.lineTo(point.x, 5);
-            canvasCtxRef.current?.moveTo(point.x, point.y);
-            canvasCtxRef.current?.arc(point.x, point.y, 5, 0, 180, false)
-            canvasCtxRef.current?.fill();
-          }
+          createPoint(point.x, point.y, 'red');
         }
       }
     }  
@@ -181,9 +174,21 @@ export const Canvas: React.FC <Props> = ({clearCanvas, start}) => {
       <canvas 
         className='canvas' 
         ref={canvasRef}
-        onMouseDown={startDrawing}
+        onClick={(e) => {
+          if (isDrawing) {
+            stopDrawing(e);
+          } else {
+            startDrawing(e)
+          }
+        }}
+        onMouseDown={(e) => {
+          if (e.button === 2) {
+            e.preventDefault();
+            setIsDrawing(false);
+            canvasCtxRef.current?.clearRect(0, 0, 500, 500);
+          }
+        }}
         onMouseMove={draw}
-        onMouseUp={stopDrawing}
       >
       </canvas>
   )
