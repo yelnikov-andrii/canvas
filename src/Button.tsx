@@ -6,7 +6,7 @@ export const Button: React.FC <Props> = ({clear}) => {
   return (
     <div className="App__button">
       <button className="button" onClick={() => {
-        clear()
+        clear();
       }}>
         Clear
       </button>
